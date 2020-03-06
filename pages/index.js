@@ -1,9 +1,10 @@
-import Head from 'next/head'
-import api from '../api/api'
+import Header from '../components/Header'
 import fetch from 'isomorphic-unfetch'
+import Link from 'next/link'
 
 const Home = props => (
   <div>
+    <Header />
     <h1>Diviscan 2.0</h1>
     <ul>
       <li>Version: {props.info.version}</li>
