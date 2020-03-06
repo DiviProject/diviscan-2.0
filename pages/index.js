@@ -1,4 +1,5 @@
 import Header from '../components/Header'
+import LatestBlocks from '../components/LatestBlocks'
 import fetch from 'isomorphic-unfetch'
 import Link from 'next/link'
 
@@ -12,15 +13,18 @@ const Home = props => (
       <li>Current supply: {props.info.moneysupply.toFixed().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</li>
       <li>Difficulty: {props.info.difficulty}</li>
     </ul>
+    <LatestBlocks blocks = {props.blocks} />
   </div>
 )
 
 Home.getInitialProps = async function() {
-  const res = await fetch('https://api.diviscan.io/info')
-  const data = await res.json()
-
+  const info = await fetch('https://api.diviscan.io/info')
+  const data = await info.json()
+  const blocks = await fetch('https://api.diviscan.io/latest-blocks')
+  const blockdata = await blocks.json()
   return {
-    info: data.result
+    info: data.result,
+    blocks: blockdata
   }
 }
 
