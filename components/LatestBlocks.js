@@ -1,5 +1,6 @@
 import fetch from 'isomorphic-unfetch'
 import { useTable } from 'react-table'
+import moment from 'moment'
 
 function Table({ columns, data }) {
     const {
@@ -73,7 +74,7 @@ function LatestBlocks(props) {
         const data = {
             blockHeight: block.height,
             blockHash: block.hash,
-            time: block.time,
+            time: moment.unix(block.time).format('dddd MMMM YY HH:mm'),
             txs: block.tx.length
         }
         dataArray.push(data)
