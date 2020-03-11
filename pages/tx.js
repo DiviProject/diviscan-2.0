@@ -1,8 +1,9 @@
 import Header from '../components/Header'
 import Search from '../components/Search'
-import Link from 'next/link' 
-import fetch from 'isomorphic-unfetch'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
 import { useTable, usePagination } from 'react-table'
+import moment from 'moment'
 
 function Table({ columns, data }) {
     const {
@@ -102,41 +103,42 @@ function Table({ columns, data }) {
     )
 }
 
-function Masternodes(props) {
+const Tx = props => {
+    const router = useRouter()
+    const slug = router.query.block
+    const dataArray = []
+    const outputArray = []
+    props.data.vout.forEach(vout => {
+        outputArray.push(vout.value)
+    })
+    const totalOutput = outputArray.reduce((a, b) => a + b, 0)
     const columns = React.useMemo(
         () => 
         [
             {
-                Header: 'Masternodes',
+                Header: 'Outputs',
                 columns: [
+                    {
+                        Header: 'Index',
+                        accessor: 'index'
+                    },
+                    {
+                        Header: 'Value',
+                        accessor: 'value'
+                    },
                     {
                         Header: 'Address',
                         accessor: 'address'
-                    },
-                    {
-                        Header: 'Amount Received',
-                        accessor: 'amountReceived'
-                    },
-                    {
-                        Header: 'Balance',
-                        accessor: 'balance'
-                    },
-                    {
-                        Header: 'Tier',
-                        accessor: 'tier'
                     }
                 ]
             }
-        ],
-        []
-    )
-    const dataArray = []
-    props.info.uniqRewards.map(mn => {
+        ]
+    )  
+    props.data.vout.map(info => {
         const data = {
-            address: mn.address,
-            amountReceived: mn.amountReceived,
-            balance: mn.balance,
-            tier: mn.layer
+            index: info.n,
+            value: info.value,
+            address: <a href={`/address?address=${info.scriptPubKey.addresses}`}>{info.scriptPubKey.addresses}</a>
         }
         dataArray.push(data)
     })
@@ -145,17 +147,25 @@ function Masternodes(props) {
         <div>
             <Header />
             <Search />
+            <h1>Details for transaction</h1>
+            <p>TXID: {props.data.txid}</p>
+            <p>Block height: {props.data.height}</p>
+            <p>Block time: {moment.unix(props.data.blocktime).format('ddd MM/YY HH:mm')}</p>
+            <p>Confirmations: {props.data.confirmations}</p>
+            <p>Total output: {totalOutput}</p>
             <Table columns = {columns} data = {dataArray} />
         </div>
     )
 }
 
-Masternodes.getInitialProps = async function() {
-    const res = await fetch('https://api.diviscan.io/masternodes')
-    const data = await res.json()
+Tx.getInitialProps = async function(slug) {
+    const info = await fetch('https://api.diviscan.io/tx/' + slug.query.transaction)
+    const data = await info.json()
+
     return {
-        info: data
+        data: data
     }
 }
- 
-export default Masternodes
+
+export default Tx
+

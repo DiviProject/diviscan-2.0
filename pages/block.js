@@ -1,8 +1,9 @@
 import Header from '../components/Header'
 import Search from '../components/Search'
-import Link from 'next/link' 
-import fetch from 'isomorphic-unfetch'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
 import { useTable, usePagination } from 'react-table'
+import moment from 'moment'
 
 function Table({ columns, data }) {
     const {
@@ -102,60 +103,69 @@ function Table({ columns, data }) {
     )
 }
 
-function Masternodes(props) {
+const Block = props => {
+
+    const router = useRouter()
+    const slug = router.query.block
+    const dataArray = []
     const columns = React.useMemo(
-        () => 
+        () =>
         [
             {
-                Header: 'Masternodes',
+                Header: 'Transactions in block',
                 columns: [
                     {
-                        Header: 'Address',
-                        accessor: 'address'
+                        Header: 'Hash',
+                        accessor: 'hash'
                     },
-                    {
-                        Header: 'Amount Received',
-                        accessor: 'amountReceived'
-                    },
-                    {
-                        Header: 'Balance',
-                        accessor: 'balance'
-                    },
-                    {
-                        Header: 'Tier',
-                        accessor: 'tier'
-                    }
+                    // {
+                    //     Header: 'Value out',
+                    //     accessor: 'value'
+                    // }
                 ]
             }
         ],
         []
     )
-    const dataArray = []
-    props.info.uniqRewards.map(mn => {
+    props.data.tx.map(txs => {
+        // const txData = fetch('https://api.diviscan.io/tx/' + txs)
+        // const txInfo = txData.json()
         const data = {
-            address: mn.address,
-            amountReceived: mn.amountReceived,
-            balance: mn.balance,
-            tier: mn.layer
+            hash: <a href={`/tx?transaction=${txs}`}>{txs}</a>
         }
         dataArray.push(data)
     })
-
     return(
         <div>
             <Header />
             <Search />
+            <h1>Details for block: {props.data.height}</h1>
+            <p>Hash: {props.data.hash}</p>
+            <p>Confirmations: {props.data.confirmations}</p>
+            <p>Size: {props.data.size}</p>
+            <p>Time: {moment.unix(props.data.time).format('ddd MM/YY HH:mm')}</p>
+            <p>Difficulty: {props.data.difficulty}</p>
+            <p>Previous block: <a href={'/block?block=' + props.data.previousblockhash}>{props.data.previousblockhash}</a></p>
             <Table columns = {columns} data = {dataArray} />
         </div>
     )
 }
 
-Masternodes.getInitialProps = async function() {
-    const res = await fetch('https://api.diviscan.io/masternodes')
-    const data = await res.json()
-    return {
-        info: data
+Block.getInitialProps = async function(slug) {
+    if (slug.query.block) {
+        const info = await fetch('https://api.diviscan.io/block/' + slug.query.block)
+        const data = await info.json()
+        return {
+            data: data.result
+        }
+    } else if (slug.query.blockheight) {
+        const info = await fetch('https://api.diviscan.io/blockheight/' + slug.query.blockheight)
+        const data = await info.json()
+        return {
+            data: data
+        }
     }
+    
 }
- 
-export default Masternodes
+
+export default Block

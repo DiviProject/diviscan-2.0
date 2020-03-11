@@ -101,10 +101,10 @@ function Table({ columns, data }) {
       </div>
     )
 }
+
 const unSatoshi = (number) => {
     return number / 1000000000
 }
-
 
 const Address = props => {
     const dataArray = []
@@ -115,7 +115,7 @@ const Address = props => {
         () => 
         [
             {
-                Header: 'Address',
+                Header: 'Address transactions',
                 columns: [
                     {
                         Header: 'Datetime',
@@ -143,7 +143,8 @@ const Address = props => {
                     }
                 ]
             }
-        ]
+        ],
+        []
     )
     props.data.transaction_info.map(info => {
         data = {
@@ -152,20 +153,20 @@ const Address = props => {
             block: info.result.height,
             confirmations: info.result.confirmations,
             size: info.result.size,
-            txInfo: info.result.vout
+            outputs: info.result.vout
         }
-        if (data.txInfo) {
-            data.txInfo.map(txs => {
-                const addresses = txs.scriptPubKey.addresses
+        if (data.outputs) {
+            data.outputs.map(output => {
+                const addresses = output.scriptPubKey.addresses
                 if (addresses !== undefined && slug == addresses) {
                     let tableData = {
                         time: data.time,
-                        txid: data.txid,
+                        txid: <a href={`/tx?transaction=${data.txid}`}>{data.txid}</a>,
                         block: data.height,
                         confirmations: data.confirmations,
                         size: data.size,
-                        txInfo: data.vout,
-                        value: txs.value
+                        outputs: data.vout,
+                        value: output.value
                     }
                     dataArray.push(tableData)
                 }
