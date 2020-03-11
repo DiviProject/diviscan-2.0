@@ -1,5 +1,6 @@
 import Header from '../components/Header'
 import LatestBlocks from '../components/LatestBlocks'
+import Search from '../components/Search'
 import fetch from 'isomorphic-unfetch'
 import Link from 'next/link'
 
@@ -7,6 +8,7 @@ const Home = props => (
   <div>
     <Header />
     <h1>Diviscan 2.0</h1>
+    <Search />
     <ul>
       <li>Version: {props.info.version}</li>
       <li>Blocks: {props.info.blocks}</li>

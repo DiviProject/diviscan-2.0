@@ -1,8 +1,8 @@
 import Header from '../components/Header'
 import Search from '../components/Search'
-import Link from 'next/link' 
-import fetch from 'isomorphic-unfetch'
+import { useRouter } from 'next/router'
 import { useTable, usePagination } from 'react-table'
+import moment from 'moment'
 
 function Table({ columns, data }) {
     const {
@@ -101,60 +101,97 @@ function Table({ columns, data }) {
       </div>
     )
 }
+const unSatoshi = (number) => {
+    return number / 1000000000
+}
 
-function Masternodes(props) {
+
+const Address = props => {
+    const dataArray = []
+    let data = {}
+    const router = useRouter()
+    const slug = router.query.address
     const columns = React.useMemo(
-        () => [
+        () => 
+        [
             {
-                Header: 'Masternodes',
+                Header: 'Address',
                 columns: [
                     {
-                        Header: 'Address',
-                        accessor: 'address'
+                        Header: 'Datetime',
+                        accessor: 'time'
                     },
                     {
-                        Header: 'Amount Received',
-                        accessor: 'amountReceived'
+                        Header: 'TXID',
+                        accessor: 'txid'
                     },
                     {
-                        Header: 'Balance',
-                        accessor: 'balance'
+                        Header: 'Block',
+                        accessor: 'block'
                     },
                     {
-                        Header: 'Tier',
-                        accessor: 'tier'
+                        Header: 'Confirmations',
+                        accessor: 'confirmations'
+                    },
+                    {
+                        Header: 'Size',
+                        accessor: 'size'
+                    },
+                    {
+                        Header: 'Amount',
+                        accessor: 'value'
                     }
                 ]
             }
-        ],
-        []
+        ]
     )
-    const dataArray = []
-    props.info.uniqRewards.map(mn => {
-        const data = {
-            address: mn.address,
-            amountReceived: mn.amountReceived,
-            balance: mn.balance,
-            tier: mn.layer
+    props.data.transaction_info.map(info => {
+        data = {
+            time: moment.unix(info.result.time).format('ddd MM/YY HH:mm'),
+            txid: info.result.txid,
+            block: info.result.height,
+            confirmations: info.result.confirmations,
+            size: info.result.size,
+            txInfo: info.result.vout
         }
-        dataArray.push(data)
+        if (data.txInfo) {
+            data.txInfo.map(txs => {
+                const addresses = txs.scriptPubKey.addresses
+                if (addresses !== undefined && slug == addresses) {
+                    let tableData = {
+                        time: data.time,
+                        txid: data.txid,
+                        block: data.height,
+                        confirmations: data.confirmations,
+                        size: data.size,
+                        txInfo: data.vout,
+                        value: txs.value
+                    }
+                    dataArray.push(tableData)
+                }
+            })
+        }
     })
-
-    return(
+    
+    
+    return( 
         <div>
             <Header />
             <Search />
+            <p>Address: {slug}</p> 
+            <p>Balance: {unSatoshi(props.data.balance_info.result.balance)}</p>
+            <p>Received: {unSatoshi(props.data.balance_info.result.received)}</p>
             <Table columns = {columns} data = {dataArray} />
         </div>
     )
 }
 
-Masternodes.getInitialProps = async function() {
-    const res = await fetch('https://api.diviscan.io/masternodes')
-    const data = await res.json()
+Address.getInitialProps = async function(slug) {
+    const info = await fetch('https://api.diviscan.io/address/' + slug.query.address)
+    const data = await info.json()
     return {
-        info: data
+        data: data
     }
 }
- 
-export default Masternodes
+
+export default Address

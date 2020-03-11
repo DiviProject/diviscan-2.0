@@ -1,4 +1,3 @@
-import fetch from 'isomorphic-unfetch'
 import { useTable } from 'react-table'
 import moment from 'moment'
 
