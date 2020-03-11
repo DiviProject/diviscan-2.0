@@ -71,8 +71,8 @@ function LatestBlocks(props) {
     const dataArray = []
     props.blocks.map(block => {
         const data = {
-            blockHeight: block.height,
-            blockHash: block.hash,
+            blockHeight: <a href={`/block?blockheight=${block.height}`}>{block.height}</a>,
+            blockHash: <a href={`/block?block=${block.hash}`}>{block.hash}</a>,
             time: moment.unix(block.time).format('dddd MMMM YY HH:mm'),
             txs: block.tx.length
         }
