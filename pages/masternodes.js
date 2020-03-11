@@ -2,7 +2,7 @@ import Header from '../components/Header'
 import Search from '../components/Search'
 import Link from 'next/link' 
 import fetch from 'isomorphic-unfetch'
-import { useTable, usePagination } from 'react-table'
+import { useTable, usePagination, useSortBy } from 'react-table'
 
 function Table({ columns, data }) {
     const {
@@ -26,7 +26,8 @@ function Table({ columns, data }) {
             data,
             initialState: { pageIndex: 0 }
         },
-        usePagination
+        useSortBy,
+        usePagination,
       )
 
     return (
@@ -36,7 +37,16 @@ function Table({ columns, data }) {
                 {headerGroups.map(headerGroup => (
                     <tr {...headerGroup.getFooterGroupProps()}>
                         {headerGroup.headers.map(column => (
-                            <th {...column.getHeaderProps()}>{column.render('Header')}</th>
+                            <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+                                {column.render('Header')}
+                                <span>
+                                    {column.isSorted
+                                    ? column.isSortedDesc
+                                        ? ' 🔽'
+                                        : ' 🔼'
+                                    : ''}
+                                </span>
+                            </th>
                         ))}
                     </tr>
                 ))}
@@ -111,19 +121,23 @@ function Masternodes(props) {
                 columns: [
                     {
                         Header: 'Address',
-                        accessor: 'address'
+                        accessor: 'address',
+                        sortType: 'basic'
                     },
                     {
                         Header: 'Amount Received',
-                        accessor: 'amountReceived'
+                        accessor: 'amountReceived',
+                        sortType: 'basic'
                     },
                     {
                         Header: 'Balance',
-                        accessor: 'balance'
+                        accessor: 'balance',
+                        sortType: 'basic'
                     },
                     {
                         Header: 'Tier',
-                        accessor: 'tier'
+                        accessor: 'tier',
+                        sortType: 'basic'
                     }
                 ]
             }
