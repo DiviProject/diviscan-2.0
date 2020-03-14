@@ -1,8 +1,9 @@
 import Header from '../components/Header'
 import Search from '../components/Search'
 import { useRouter } from 'next/router'
-import { useTable, usePagination } from 'react-table'
+import { useTable, usePagination, useSortBy } from 'react-table'
 import moment from 'moment'
+import * as _ from 'lodash'
 
 function Table({ columns, data }) {
     const {
@@ -24,8 +25,11 @@ function Table({ columns, data }) {
         {
             columns,
             data,
-            initialState: { pageIndex: 0 }
+            initialState: { 
+                pageIndex: 0 
+            }
         },
+        useSortBy,
         usePagination
       )
 
@@ -36,7 +40,16 @@ function Table({ columns, data }) {
                 {headerGroups.map(headerGroup => (
                     <tr {...headerGroup.getFooterGroupProps()}>
                         {headerGroup.headers.map(column => (
-                            <th {...column.getHeaderProps()}>{column.render('Header')}</th>
+                            <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+                                {column.render('Header')}
+                                <span>
+                                    {column.isSorted
+                                    ? column.isSortedDesc
+                                        ? ' 🔽'
+                                        : ' 🔼'
+                                    : ''}
+                                </span>
+                            </th>
                         ))}
                     </tr>
                 ))}
@@ -103,7 +116,7 @@ function Table({ columns, data }) {
 }
 
 const unSatoshi = (number) => {
-    return number / 1000000000
+    return number / 100000000
 }
 
 const Address = props => {
@@ -117,64 +130,74 @@ const Address = props => {
             {
                 Header: 'Address transactions',
                 columns: [
-                    {
-                        Header: 'Datetime',
-                        accessor: 'time'
-                    },
+                    // {
+                    //     Header: 'Datetime',
+                    //     accessor: 'time'
+                    // },
                     {
                         Header: 'TXID',
-                        accessor: 'txid'
+                        accessor: 'txid',
+                        sortType: 'basic'
                     },
                     {
                         Header: 'Block',
-                        accessor: 'block'
+                        accessor: 'block',
+                        sortType: 'basic',
                     },
-                    {
-                        Header: 'Confirmations',
-                        accessor: 'confirmations'
-                    },
-                    {
-                        Header: 'Size',
-                        accessor: 'size'
-                    },
+                    // {
+                    //     Header: 'Confirmations',
+                    //     accessor: 'confirmations'
+                    // },
+                    // {
+                    //     Header: 'Size',
+                    //     accessor: 'size'
+                    // },
                     {
                         Header: 'Amount',
-                        accessor: 'value'
+                        accessor: 'value',
+                        sortType: 'basic'
                     }
                 ]
             }
         ],
         []
     )
-    props.data.transaction_info.map(info => {
-        data = {
-            time: moment.unix(info.result.time).format('ddd MM/YY HH:mm'),
-            txid: info.result.txid,
-            block: info.result.height,
-            confirmations: info.result.confirmations,
-            size: info.result.size,
-            outputs: info.result.vout
-        }
-        if (data.outputs) {
-            data.outputs.map(output => {
-                const addresses = output.scriptPubKey.addresses
-                if (addresses !== undefined && slug == addresses) {
-                    let tableData = {
-                        time: data.time,
-                        txid: <a href={`/tx?transaction=${data.txid}`}>{data.txid}</a>,
-                        block: data.height,
-                        confirmations: data.confirmations,
-                        size: data.size,
-                        outputs: data.vout,
-                        value: output.value
+    
+   
+
+    const deltaInfo = props.deltas[0].result
+
+    const getStakingRewards = () => {
+        const stakes = _.groupBy(deltaInfo, 'txid')
+        Object.entries(stakes).map(entry => {
+            if (entry[1].length == 2) {
+                entry.forEach(sat => {
+                    if (sat[0].satoshis) {
+                        const stakeReward = sat[0].satoshis + sat[1].satoshis
+                        dataArray.push({
+                            txid: <a href={`/tx?transaction=${sat[0].txid}`}>{sat[0].txid}</a>,
+                            block: <a href={`/block?blockheight=${sat[0].height}`}>{sat[0].height}</a>,
+                            value: unSatoshi(stakeReward)
+                        })
+                    } 
+                })
+            } 
+            else {
+                entry.forEach(sat => {
+                    if (sat[0].satoshis) {
+                        dataArray.push({
+                            txid: <a href={`/tx?transaction=${sat[0].txid}`}>{sat[0].txid}</a>,
+                            block: <a href={`/block?blockheight=${sat[0].height}`}>{sat[0].height}</a>,
+                            value: unSatoshi(sat[0].satoshis)
+                        })
                     }
-                    dataArray.push(tableData)
-                }
-            })
-        }
-    })
+                })
+            }
+        })
+    }
     
-    
+    getStakingRewards()
+
     return( 
         <div>
             <Header />
@@ -189,9 +212,12 @@ const Address = props => {
 
 Address.getInitialProps = async function(slug) {
     const info = await fetch('https://api.diviscan.io/address/' + slug.query.address)
+    const deltas = await fetch('https://api.diviscan.io/address-deltas/' + slug.query.address)
+    const deltaData = await deltas.json()
     const data = await info.json()
     return {
-        data: data
+        data: data,
+        deltas: deltaData
     }
 }
 
